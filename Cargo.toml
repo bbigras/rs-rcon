@@ -1,0 +1,10 @@
+[package]
+name = "rcon"
+version = "0.1.0"
+authors = ["Bruno Bigras <bigras.bruno@gmail.com>"]
+
+[dependencies]
+byteorder = "1.1"
+error-chain = "0.10"
+nom = "3.2"
+r2d2 = "0.7"
