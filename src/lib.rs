@@ -32,19 +32,19 @@ const SERVERDATA_RESPONSE_VALUE: i32 = 0;
 pub mod errors {
     // Create the Error, ErrorKind, ResultExt, and Result types
     error_chain! {
-                        foreign_links {
-                            Fmt(::std::fmt::Error);
-                            Io(::std::io::Error);
-                            FromUtf8Error(::std::string::FromUtf8Error);
-                        }
+        foreign_links {
+            Fmt(::std::fmt::Error);
+            Io(::std::io::Error);
+            FromUtf8Error(::std::string::FromUtf8Error);
+        }
 
-                        errors {
-                            OkManagerError(t: String) {
-                                description("error ok manager")
-                                display("error: '{}'", t)
-                            }
-                        }
-                    }
+        errors {
+            OkManagerError(t: String) {
+                description("error ok manager")
+                display("error: '{}'", t)
+            }
+        }
+    }
 }
 
 use errors::*;
