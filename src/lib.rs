@@ -221,6 +221,7 @@ fn connect<A: ToSocketAddrs>(addr: A, pw: &str) -> Result<TcpStream> {
     stream.take_error()?;
 
     stream.write_all(&data)?;
+    stream.flush()?;
     stream.take_error()?;
 
     let resp1 = read_rcon_resp(&mut stream)?;
@@ -261,6 +262,7 @@ pub fn exec<A: ToSocketAddrs>(addr: A, pw: &str, command: &str) -> Result<String
 
     let cmd_bin = rcon_gen(1, command, SERVERDATA_EXECCOMMAND)?;
     conn.write_all(&cmd_bin)?;
+    conn.flush()?;
     conn.take_error()?;
 
     Ok(read_rcon_resp(&mut conn)?.body)
@@ -271,12 +273,14 @@ pub fn exec_big<A: ToSocketAddrs>(addr: A, pw: &str, command: &str) -> Result<St
 
     let cmd_bin = rcon_gen(1, command, SERVERDATA_EXECCOMMAND)?;
     conn.write_all(&cmd_bin)?;
+    conn.flush()?;
     conn.take_error()?;
 
     let empty_id = 2;
 
     let cmd_bin = rcon_gen(empty_id, "", SERVERDATA_RESPONSE_VALUE)?;
     conn.write_all(&cmd_bin)?;
+    conn.flush()?;
     conn.take_error()?;
 
     let mut buf = Vec::new();
