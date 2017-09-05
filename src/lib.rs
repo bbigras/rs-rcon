@@ -217,7 +217,7 @@ fn connect<A: ToSocketAddrs>(addr: A, pw: &str) -> Result<TcpStream> {
 
     let auth_id = 0;
 
-    let data = rcon_gen(auth_id, &pw, SERVERDATA_AUTH)?;
+    let data = rcon_gen(auth_id, pw, SERVERDATA_AUTH)?;
     stream.take_error()?;
 
     stream.write_all(&data)?;
@@ -226,7 +226,7 @@ fn connect<A: ToSocketAddrs>(addr: A, pw: &str) -> Result<TcpStream> {
     let resp1 = read_rcon_resp(&mut stream)?;
     stream.take_error()?;
 
-    if resp1.id != auth_id || resp1.the_type != 0 || resp1.body.len() != 0 {
+    if resp1.id != auth_id || resp1.the_type != 0 || !resp1.body.is_empty() {
         bail!("packet was supposed to be empty");
     }
 
