@@ -1,0 +1,21 @@
+language: rust
+dist: trusty
+cache: cargo
+rust:
+  - stable
+  - beta
+  - nightly
+matrix:
+  allow_failures:
+    - rust: nightly
+script:
+- cargo clean
+- cargo build --features with-r2d2
+- cargo test --features with-r2d2
+
+after_success: |
+  if [[ "$TRAVIS_RUST_VERSION" == stable ]]; then
+    cargo clean
+    cargo install cargo-tarpaulin
+    cargo tarpaulin --features with-r2d2 --ciserver travis-ci --coveralls $TRAVIS_JOB_ID
+  fi
