@@ -1,6 +1,6 @@
 use std;
 use std::io::{self, Write};
-use std::net::TcpStream;
+use std::net::{SocketAddr, TcpStream};
 
 use r2d2::ManageConnection;
 
@@ -23,7 +23,10 @@ impl ManageConnection for OkManager {
     type Error = StringError;
 
     fn connect(&self) -> std::result::Result<RconConnection, StringError> {
-        match connect((self.ip.as_str(), self.port), &self.pw) {
+        let ip: std::net::IpAddr = self.ip.parse().map_err(|e: std::net::AddrParseError| StringError(e.to_string()))?;
+        let addr = SocketAddr::new(ip, self.port);
+        
+        match connect(&addr, &self.pw) {
             Ok(conn) => Ok(RconConnection {
                 conn: conn,
                 request_id: 10,
