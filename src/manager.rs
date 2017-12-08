@@ -23,9 +23,11 @@ impl ManageConnection for OkManager {
     type Error = StringError;
 
     fn connect(&self) -> std::result::Result<RconConnection, StringError> {
-        let ip: std::net::IpAddr = self.ip.parse().map_err(|e: std::net::AddrParseError| StringError(e.to_string()))?;
+        let ip: std::net::IpAddr = self.ip
+            .parse()
+            .map_err(|e: std::net::AddrParseError| StringError(e.to_string()))?;
         let addr = SocketAddr::new(ip, self.port);
-        
+
         match connect(&addr, &self.pw) {
             Ok(conn) => Ok(RconConnection {
                 conn: conn,
