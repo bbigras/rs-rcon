@@ -15,7 +15,7 @@ extern crate nom;
 extern crate error_chain;
 
 use std::str;
-use std::net::{TcpStream, ToSocketAddrs};
+use std::net::{SocketAddr, TcpStream};
 use std::io::{Cursor, Read, Write};
 use std::time::Duration;
 use std::fmt;
@@ -213,8 +213,8 @@ fn rcon_gen(id: i32, data: &str, packet_type: i32) -> Result<Vec<u8>> {
     Ok(wtr2)
 }
 
-fn connect<A: ToSocketAddrs>(addr: A, pw: &str) -> Result<TcpStream> {
-    let mut stream: TcpStream = TcpStream::connect(addr)?;
+fn connect(addr: &SocketAddr, pw: &str) -> Result<TcpStream> {
+    let mut stream: TcpStream = TcpStream::connect_timeout(addr, Duration::new(TIMEOUT_SECS, 0))?;
     stream.set_read_timeout(Some(Duration::new(TIMEOUT_SECS, 0)))?;
     stream.set_write_timeout(Some(Duration::new(TIMEOUT_SECS, 0)))?;
 
@@ -260,7 +260,7 @@ fn test_gen_exec_cmd() {
     }
 }
 
-pub fn exec<A: ToSocketAddrs>(addr: A, pw: &str, command: &str) -> Result<String> {
+pub fn exec(addr: &SocketAddr, pw: &str, command: &str) -> Result<String> {
     let mut conn = connect(addr, pw)?;
 
     let cmd_bin = rcon_gen(1, command, SERVERDATA_EXECCOMMAND)?;
@@ -271,7 +271,7 @@ pub fn exec<A: ToSocketAddrs>(addr: A, pw: &str, command: &str) -> Result<String
     Ok(read_rcon_resp(&mut conn)?.body)
 }
 
-pub fn exec_big<A: ToSocketAddrs>(addr: A, pw: &str, command: &str) -> Result<String> {
+pub fn exec_big(addr: &SocketAddr, pw: &str, command: &str) -> Result<String> {
     let mut conn = connect(addr, pw)?;
 
     let cmd_bin = rcon_gen(1, command, SERVERDATA_EXECCOMMAND)?;
