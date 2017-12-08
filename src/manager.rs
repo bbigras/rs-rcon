@@ -1,10 +1,10 @@
 use std;
-use std::io::{self, Write};
+use std::io::Write;
 use std::net::{SocketAddr, TcpStream};
 
 use r2d2::ManageConnection;
 
-use errors::*;
+use Error;
 use SERVERDATA_RESPONSE_VALUE;
 use read_rcon_resp_multi;
 use rcon_gen;
@@ -35,13 +35,8 @@ impl ManageConnection for OkManager {
             }),
             Err(e) => {
                 println!("error connect: {}", e);
-                let mut stderr = io::stderr();
-                for e in e.iter().skip(1) {
-                    writeln!(stderr, "caused by: {}", e).expect("can't write to stderr");
-                }
-
-                if let Some(backtrace) = e.backtrace() {
-                    writeln!(stderr, "backtrace: {:?}", backtrace).expect("can't write to stderr");
+                for cause in e.causes() {
+                    println!("{}", cause);
                 }
 
                 Err(StringError(e.to_string()))
@@ -66,7 +61,7 @@ impl ManageConnection for OkManager {
     }
 }
 
-fn is_valid2(mut conn: &mut TcpStream, exec_id: i32) -> Result<()> {
+fn is_valid2(mut conn: &mut TcpStream, exec_id: i32) -> Result<(), Error> {
     let cmd_bin = rcon_gen(exec_id, "", SERVERDATA_RESPONSE_VALUE)?;
     conn.write_all(&cmd_bin)?;
     conn.take_error()?;

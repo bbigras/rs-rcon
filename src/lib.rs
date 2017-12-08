@@ -1,5 +1,3 @@
-#![recursion_limit = "1024"]
-
 extern crate byteorder;
 
 #[cfg(feature = "with-r2d2")]
@@ -12,7 +10,7 @@ pub mod manager;
 extern crate nom;
 
 #[macro_use]
-extern crate error_chain;
+extern crate failure;
 
 use std::str;
 use std::net::{SocketAddr, TcpStream};
@@ -24,6 +22,7 @@ use std::error;
 use nom::le_i32;
 
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
+use failure::Error;
 
 const TIMEOUT_SECS: u64 = 2;
 
@@ -31,26 +30,6 @@ const SERVERDATA_AUTH_RESPONSE: i32 = 2;
 const SERVERDATA_EXECCOMMAND: i32 = 2;
 const SERVERDATA_AUTH: i32 = 3;
 const SERVERDATA_RESPONSE_VALUE: i32 = 0;
-
-pub mod errors {
-    // Create the Error, ErrorKind, ResultExt, and Result types
-    error_chain! {
-        foreign_links {
-            Fmt(::std::fmt::Error);
-            Io(::std::io::Error);
-            FromUtf8Error(::std::string::FromUtf8Error);
-        }
-
-        errors {
-            OkManagerError(t: String) {
-                description("error ok manager")
-                display("error: '{}'", t)
-            }
-        }
-    }
-}
-
-use errors::*;
 
 #[derive(Debug, PartialEq)]
 struct RconResponse {
@@ -88,7 +67,7 @@ named!(parse_rcon_response_bin<&[u8], RconResponseBin>, do_parse!(
         })
 ));
 
-fn read_rcon_resp(stream: &mut Read) -> Result<RconResponse> {
+fn read_rcon_resp(stream: &mut Read) -> Result<RconResponse, Error> {
     let mut buf1 = [0; 4];
     stream.read_exact(&mut buf1)?;
 
@@ -100,12 +79,11 @@ fn read_rcon_resp(stream: &mut Read) -> Result<RconResponse> {
 
     let parsed = parse_rcon_response(&buf2)
         .to_full_result()
-        .map_err(|e| StringError(format!("{:?}", e)))
-        .chain_err(|| "can't parse_rcon_response")?;
+        .map_err(|e| format_err!("error parse_rcon_response: {:?}", e))?;
     Ok(parsed)
 }
 
-fn read_rcon_resp_multi(stream: &mut Read, stop_id: i32) -> Result<(RconResponseBin, bool)> {
+fn read_rcon_resp_multi(stream: &mut Read, stop_id: i32) -> Result<(RconResponseBin, bool), Error> {
     let mut buf1 = [0; 4];
     stream.read_exact(&mut buf1)?;
 
@@ -117,8 +95,7 @@ fn read_rcon_resp_multi(stream: &mut Read, stop_id: i32) -> Result<(RconResponse
 
     let parsed = parse_rcon_response_bin(&buf2)
         .to_full_result()
-        .map_err(|e| StringError(format!("{:?}", e)))
-        .chain_err(|| "can't parse_rcon_response")?;
+        .map_err(|e| format_err!("error parse_rcon_response_bin: {:?}", e))?;
 
     if parsed.id == stop_id {
         let mut buf3 = [0; 21];
@@ -199,7 +176,7 @@ fn test_read_rcon_resp() {
     }
 }
 
-fn rcon_gen(id: i32, data: &str, packet_type: i32) -> Result<Vec<u8>> {
+fn rcon_gen(id: i32, data: &str, packet_type: i32) -> Result<Vec<u8>, Error> {
     let mut wtr: Vec<u8> = Vec::new();
     wtr.write_i32::<LittleEndian>(id)?;
     wtr.write_i32::<LittleEndian>(packet_type)?;
@@ -213,7 +190,7 @@ fn rcon_gen(id: i32, data: &str, packet_type: i32) -> Result<Vec<u8>> {
     Ok(wtr2)
 }
 
-fn connect(addr: &SocketAddr, pw: &str) -> Result<TcpStream> {
+fn connect(addr: &SocketAddr, pw: &str) -> Result<TcpStream, Error> {
     let mut stream: TcpStream = TcpStream::connect_timeout(addr, Duration::new(TIMEOUT_SECS, 0))?;
     stream.set_read_timeout(Some(Duration::new(TIMEOUT_SECS, 0)))?;
     stream.set_write_timeout(Some(Duration::new(TIMEOUT_SECS, 0)))?;
@@ -260,7 +237,7 @@ fn test_gen_exec_cmd() {
     }
 }
 
-pub fn exec(addr: &SocketAddr, pw: &str, command: &str) -> Result<String> {
+pub fn exec(addr: &SocketAddr, pw: &str, command: &str) -> Result<String, Error> {
     let mut conn = connect(addr, pw)?;
 
     let cmd_bin = rcon_gen(1, command, SERVERDATA_EXECCOMMAND)?;
@@ -271,7 +248,7 @@ pub fn exec(addr: &SocketAddr, pw: &str, command: &str) -> Result<String> {
     Ok(read_rcon_resp(&mut conn)?.body)
 }
 
-pub fn exec_big(addr: &SocketAddr, pw: &str, command: &str) -> Result<String> {
+pub fn exec_big(addr: &SocketAddr, pw: &str, command: &str) -> Result<String, Error> {
     let mut conn = connect(addr, pw)?;
 
     let cmd_bin = rcon_gen(1, command, SERVERDATA_EXECCOMMAND)?;
@@ -523,7 +500,7 @@ pub struct RconConnection {
 }
 
 impl RconConnection {
-    pub fn exec(&mut self, command: &str) -> Result<String> {
+    pub fn exec(&mut self, command: &str) -> Result<String, Error> {
         let exec_id = self.request_id;
         self.request_id += 1;
 
