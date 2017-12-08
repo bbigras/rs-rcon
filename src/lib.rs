@@ -25,7 +25,7 @@ use nom::le_i32;
 
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 
-const TIMEOUT_SECS: u64 = 5;
+const TIMEOUT_SECS: u64 = 2;
 
 const SERVERDATA_AUTH_RESPONSE: i32 = 2;
 const SERVERDATA_EXECCOMMAND: i32 = 2;
