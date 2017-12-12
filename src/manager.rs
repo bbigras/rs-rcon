@@ -12,6 +12,7 @@ use StringError;
 use RconConnection;
 use connect;
 
+#[derive(Debug)]
 pub struct OkManager {
     pub ip: String,
     pub port: u16,
