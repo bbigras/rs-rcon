@@ -22,7 +22,7 @@ impl ManageConnection for OkManager {
     type Connection = RconConnection;
     type Error = StringError;
 
-    fn connect(&self) -> std::result::Result<RconConnection, StringError> {
+    fn connect(&self) -> std::result::Result<Self::Connection, Self::Error> {
         let ip: std::net::IpAddr = self.ip
             .parse()
             .map_err(|e: std::net::AddrParseError| StringError(e.to_string()))?;
@@ -44,7 +44,7 @@ impl ManageConnection for OkManager {
         }
     }
 
-    fn is_valid(&self, conn: &mut RconConnection) -> std::result::Result<(), StringError> {
+    fn is_valid(&self, conn: &mut RconConnection) -> std::result::Result<(), Self::Error> {
         let exec_id = conn.request_id;
         conn.request_id += 1;
 
