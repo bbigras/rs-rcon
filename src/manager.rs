@@ -13,13 +13,13 @@ use RconConnection;
 use connect;
 
 #[derive(Debug)]
-pub struct OkManager {
+pub struct RconManager {
     pub ip: String,
     pub port: u16,
     pub pw: String,
 }
 
-impl ManageConnection for OkManager {
+impl ManageConnection for RconManager {
     type Connection = RconConnection;
     type Error = StringError;
 
