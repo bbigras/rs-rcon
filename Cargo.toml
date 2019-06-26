@@ -6,7 +6,7 @@ authors = ["Bruno Bigras <bigras.bruno@gmail.com>"]
 [dependencies]
 byteorder = "1.2"
 failure = "0.1"
-nom = "3.2"
+nom = "5.0"
 r2d2 = { version = "0.8", optional = true }
 
 [features]
